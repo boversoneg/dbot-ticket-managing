@@ -1,8 +1,16 @@
 const Discord = require("discord.js");
+const mysql = require('mysql');
 const client = new Discord.Client();
 const prefix = '-';
 let wiadomosc;
 let kto;
+
+const connection = mysql.createConnection({
+    host: 'sql7.freesqldatabase.com',
+    user: 'sql7383145',
+    password: 'Y7YAwJP1DF',
+    database: 'sql7383145'
+});
 
 client.on('ready', () => { 
     console.log(`Logged as ${client.user.tag}`);
@@ -28,62 +36,22 @@ client.on('message', async (message) => {
 
     if (command === 'ticketcreate') {
         if (message.author.id !== '613717481323757569') return;
-        if (args[0] === 'lua') {
+        if (args[0]) {
+            if (!args[1]) {
+                kto = 'brak'
+            } else {
+                kto = `<@${args[1]}>`
+            }
             const embed = new Discord.MessageEmbed()
             .setColor('#9370DB')
-            .setTitle('LUA Developer')
+            .setTitle(`${args[0]} Developer`)
             .setDescription(`Dodaj reakcję 💼 jeśli chcesz otrzymać rolę developera\n\nDodaj reakcję 📋 aby zostać opiekunem\n\nDodaj reakcję 🛡️ aby zgłosić opiekuna/devlopera\n\n\n\nAktualny opiekun: <@${args[1]}>`);
 
             wiadomosc = await message.channel.send(embed);
             wiadomosc.react('💼');
             wiadomosc.react('📋');
             wiadomosc.react('🛡️');
-        } else if (args[0] === 'js') {
-            if (!args[1]) {
-                kto = 'brak';
-            } else {
-                kto = `<@${args[1]}>`;
-            }
-            const embed = new Discord.MessageEmbed()
-            .setColor('#9370DB')
-            .setTitle('JavaScript Developer')
-            .setDescription(`Dodaj reakcję 💼 jeśli chcesz otrzymać rolę developera\n\nDodaj reakcję 📋 aby zostać opiekunem\n\nDodaj reakcję 🛡️ aby zgłosić opiekuna/devlopera\n\n\n\nAktualny opiekun: ${kto}`);
-
-            wiadomosc = await message.channel.send(embed);
-            wiadomosc.react('💼');
-            wiadomosc.react('📋');
-            wiadomosc.react('🛡️');
-        } else if (args[0] === 'cpp') {
-            if (!args[1]) {
-                kto = 'brak';
-            } else {
-                kto = `<@${args[1]}>`;
-            }
-            const embed = new Discord.MessageEmbed()
-            .setColor('#9370DB')
-            .setTitle('C++ Developer')
-            .setDescription(`Dodaj reakcję 💼 jeśli chcesz otrzymać rolę developera\n\nDodaj reakcję 📋 aby zostać opiekunem\n\nDodaj reakcję 🛡️ aby zgłosić opiekuna/devlopera\n\n\n\nAktualny opiekun: ${kto}`);
-
-            wiadomosc = await message.channel.send(embed);
-            wiadomosc.react('💼');
-            wiadomosc.react('📋');
-            wiadomosc.react('🛡️');
-        } else if (args[0] === 'cs') {
-            if (!args[1]) {
-                kto = 'brak';
-            } else {
-                kto = `<@${args[1]}>`;
-            }
-            const embed = new Discord.MessageEmbed()
-            .setColor('#9370DB')
-            .setTitle('C# Developer')
-            .setDescription(`Dodaj reakcję 💼 jeśli chcesz otrzymać rolę developera\n\nDodaj reakcję 📋 aby zostać opiekunem\n\nDodaj reakcję 🛡️ aby zgłosić opiekuna/devlopera\n\n\n\nAktualny opiekun: ${kto}`);
-
-            wiadomosc = await message.channel.send(embed);
-            wiadomosc.react('💼');
-            wiadomosc.react('📋');
-            wiadomosc.react('🛡️');
-        } else if (args[0] === 'other') {
+        }  else if (args[0] === 'other') {
             const embed = new Discord.MessageEmbed()
             .setColor('#9370DB')
             .setTitle('Nowy język')
@@ -91,7 +59,7 @@ client.on('message', async (message) => {
 
             wiadomosc = await message.channel.send(embed);
             wiadomosc.react('📋');
-        }
+        };
     } else if (message.content.startsWith(prefix + "eval")) {
         if(message.author.id !== '613717481323757569') return;
         try {
