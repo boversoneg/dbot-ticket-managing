@@ -5,12 +5,13 @@ const prefix = '-';
 let wiadomosc;
 let kto;
 
-const connection = mysql.createConnection({
-    host: 'sql7.freesqldatabase.com',
-    user: 'sql7383145',
-    password: 'Y7YAwJP1DF',
-    database: 'sql7383145'
+const con = mysql.createConnection({
+    host: 'remotemysql.com',
+    user: '1aLNWvex0X',
+    password: 'CuKgMgYKud',
+    database: '1aLNWvex0X'
 });
+con.connect();
 
 client.on('ready', () => { 
     console.log(`Logged as ${client.user.tag}`);
@@ -38,19 +39,20 @@ client.on('message', async (message) => {
         if (message.author.id !== '613717481323757569') return;
         if (args[0]) {
             if (!args[1]) {
-                kto = 'brak'
+                kto = `brak`
             } else {
                 kto = `<@${args[1]}>`
             }
             const embed = new Discord.MessageEmbed()
             .setColor('#9370DB')
             .setTitle(`${args[0]} Developer`)
-            .setDescription(`Dodaj reakcję 💼 jeśli chcesz otrzymać rolę developera\n\nDodaj reakcję 📋 aby zostać opiekunem\n\nDodaj reakcję 🛡️ aby zgłosić opiekuna/devlopera\n\n\n\nAktualny opiekun: <@${args[1]}>`);
+            .setDescription(`Dodaj reakcję 💼 jeśli chcesz otrzymać rolę developera\n\nDodaj reakcję 📋 aby zostać opiekunem\n\nDodaj reakcję 🛡️ aby zgłosić opiekuna/developera\n\n\n\nAktualny opiekun: ${kto}`);
 
             wiadomosc = await message.channel.send(embed);
             wiadomosc.react('💼');
             wiadomosc.react('📋');
             wiadomosc.react('🛡️');
+
         }  else if (args[0] === 'other') {
             const embed = new Discord.MessageEmbed()
             .setColor('#9370DB')
@@ -77,6 +79,7 @@ client.on('message', async (message) => {
 });
 
 client.on('messageReactionAdd', (reaction, user) => {
+    if (user.bot) return; 
     console.log('ta');
     if (reaction.message.id === '790166299107917825') {
         console.log('elo');
