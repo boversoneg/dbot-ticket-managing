@@ -4,6 +4,7 @@ const client = new Discord.Client();
 const prefix = '-';
 let wiadomosc;
 let kto;
+let guard;
 
 const con = mysql.createConnection({
     host: 'remotemysql.com',
@@ -11,11 +12,24 @@ const con = mysql.createConnection({
     password: 'CuKgMgYKud',
     database: '1aLNWvex0X'
 });
-con.connect();
+
+con.connect(err => {
+    if(err) throw err;
+    console.log("Połączono z bazą danych")
+});
 
 client.on('ready', () => { 
     console.log(`Logged as ${client.user.tag}`);
     console.log(`ClientID ${client.user.id}`);
+
+    const query = con.query(`SELECT * FROM tickets WHERE working = 1`, (err, rows) => {
+        if(err) throw err;
+
+        if (rows.length > 1) {
+            const kanalll = client.channels.cache.get(`${rows[0].channelid}`);
+            kanalll.messages.fetch();
+        }
+    });
 
     setInterval (function () {
         client.user.setPresence({activity: {name: `${client.guilds.cache.get('789874507665899560').memberCount} użytkowników`}});
@@ -37,11 +51,32 @@ client.on('message', async (message) => {
 
     if (command === 'ticketcreate') {
         if (message.author.id !== '613717481323757569') return;
-        if (args[0]) {
+        if (args[0] === 'other') {
+            if (!args[1]) {
+                guard = 613717481323757569
+            } else {
+                guard = args[1]
+            }
+            const embed = new Discord.MessageEmbed()
+            .setColor('#9370DB')
+            .setTitle('Nowy język')
+            .setDescription(`Naciśnij reakcję 📋 jeśli chcesz wysłać prośbę o dodanie nowego języka`);
+
+            wiadomosc = await message.channel.send(embed);
+            wiadomosc.react('📋');
+
+            con.query(`INSERT INTO tickets (channelid, messageid, guardid, name, emoji1) VALUES ('${wiadomosc.channel.id}', '${wiadomosc.id}', '${guard}', 'OTHER', '📋')`)
+        } else if (args[0]) {
             if (!args[1]) {
                 kto = `brak`
             } else {
                 kto = `<@${args[1]}>`
+            }
+
+            if (!args[1]) {
+                guard = 613717481323757569
+            } else {
+                guard = args[1]
             }
             const embed = new Discord.MessageEmbed()
             .setColor('#9370DB')
@@ -52,16 +87,8 @@ client.on('message', async (message) => {
             wiadomosc.react('💼');
             wiadomosc.react('📋');
             wiadomosc.react('🛡️');
-
-        }  else if (args[0] === 'other') {
-            const embed = new Discord.MessageEmbed()
-            .setColor('#9370DB')
-            .setTitle('Nowy język')
-            .setDescription(`Naciśnij reakcję 📋 jeśli chcesz wysłać prośbę o dodanie nowego języka`);
-
-            wiadomosc = await message.channel.send(embed);
-            wiadomosc.react('📋');
-        };
+            con.query(`INSERT INTO tickets (channelid, messageid, guardid, name, emoji1, emoji2, emoji3) VALUES ('${wiadomosc.channel.id}', '${wiadomosc.id}', '${guard}', '${args[0]}', '💼', '📋', '🛡️')`)
+        }
     } else if (message.content.startsWith(prefix + "eval")) {
         if(message.author.id !== '613717481323757569') return;
         try {
@@ -80,11 +107,18 @@ client.on('message', async (message) => {
 
 client.on('messageReactionAdd', (reaction, user) => {
     if (user.bot) return; 
-    console.log('ta');
-    if (reaction.message.id === '790166299107917825') {
-        console.log('elo');
-        reaction.message.channel.send("eloox");
-    };
+    console.log(reaction.message.id)
+    const query1 = con.query(`SELECT * FROM tickets WHERE emoji1 = '${reaction.emoji.name}'`, (err, rows) => {
+        if(err) throw err;
+
+        console.log(rows[0].messageid)
+
+        if (rows.length > 1) {
+            if (reaction.message.id === rows[0].messageid) {
+                console.log("elo")
+            }
+        }
+    });
 });
 
 client.login('NzkwMTU1MTE4ODc1OTAxOTky.X98fTA.54UPDoCDIVM7CnmcpfFVlugCD7A');
