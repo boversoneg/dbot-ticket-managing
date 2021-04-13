@@ -5,12 +5,14 @@ const prefix = '-';
 let wiadomosc;
 let kto;
 let guard;
+let liczba = 0;
 
 const con = mysql.createConnection({
-    host: 'remotemysql.com',
-    user: '1aLNWvex0X',
-    password: 'CuKgMgYKud',
-    database: '1aLNWvex0X'
+    host: 'srv07.mikr.us',
+    user: 'bover',
+    password: 'boverchuj123',
+    database: 'bover',
+    port: 40090,
 });
 
 con.connect(err => {
@@ -22,12 +24,21 @@ client.on('ready', () => {
     console.log(`Logged as ${client.user.tag}`);
     console.log(`ClientID ${client.user.id}`);
 
-    const query = con.query(`SELECT * FROM tickets WHERE working = 1`, (err, rows) => {
+    const query = con.query(`SELECT * FROM dev_tickets WHERE working = 1`, (err, rows) => {
         if(err) throw err;
 
-        if (rows.length > 1) {
+        if (rows.length >= 1) {
             const kanalll = client.channels.cache.get(`${rows[0].channelid}`);
             kanalll.messages.fetch();
+        }
+    });
+
+    const query1 = con.query(`SELECT * FROM dev_opened WHERE working = 1`, (err, rows) => {
+        if(err) throw err;
+
+        if (rows.length >= 1) {
+            const kanallll = client.channels.cache.get(`${rows[0].channelid}`);
+            kanallll.messages.fetch();
         }
     });
 
@@ -65,7 +76,7 @@ client.on('message', async (message) => {
             wiadomosc = await message.channel.send(embed);
             wiadomosc.react('📋');
 
-            con.query(`INSERT INTO tickets (channelid, messageid, guardid, name, emoji1) VALUES ('${wiadomosc.channel.id}', '${wiadomosc.id}', '${guard}', 'OTHER', '📋')`)
+            con.query(`INSERT INTO dev_tickets (channelid, messageid, guardid, name, emoji1) VALUES ('${wiadomosc.channel.id}', '${wiadomosc.id}', '${guard}', 'OTHER', '📋')`)
         } else if (args[0]) {
             if (!args[1]) {
                 kto = `brak`
@@ -74,7 +85,7 @@ client.on('message', async (message) => {
             }
 
             if (!args[1]) {
-                guard = 613717481323757569
+                guard = '613717481323757569'
             } else {
                 guard = args[1]
             }
@@ -87,7 +98,7 @@ client.on('message', async (message) => {
             wiadomosc.react('💼');
             wiadomosc.react('📋');
             wiadomosc.react('🛡️');
-            con.query(`INSERT INTO tickets (channelid, messageid, guardid, name, emoji1, emoji2, emoji3) VALUES ('${wiadomosc.channel.id}', '${wiadomosc.id}', '${guard}', '${args[0]}', '💼', '📋', '🛡️')`)
+            con.query(`INSERT INTO dev_tickets (channelid, messageid, guardid, name, emoji1, emoji2, emoji3) VALUES ('${wiadomosc.channel.id}', '${wiadomosc.id}', '${guard}', '${args[0]}', '💼', '📋', '🛡️')`)
         }
     } else if (message.content.startsWith(prefix + "eval")) {
         if(message.author.id !== '613717481323757569') return;
@@ -105,20 +116,160 @@ client.on('message', async (message) => {
       }
 });
 
-client.on('messageReactionAdd', (reaction, user) => {
-    if (user.bot) return; 
-    console.log(reaction.message.id)
-    const query1 = con.query(`SELECT * FROM tickets WHERE emoji1 = '${reaction.emoji.name}'`, (err, rows) => {
-        if(err) throw err;
+client.on('messageReactionAdd', async (reaction, ruser) => {
+    if (ruser.bot) return;
+    let tguild = client.guilds.cache.get('789874507665899560')
+    let everyoneRole = tguild.roles.cache.find(r => r.name === '@everyone');
+    if (reaction.message.channel.id === '789991949242204241') {
+        const query1 = con.query(`SELECT * FROM dev_tickets WHERE messageid = '${reaction.message.id}'`, async (err, rows) => {
+            if(err) throw err;
+    
+            if (rows.length >= 1) {
+                if (reaction.emoji.name === rows[0].emoji1) {
+                    const ticketchannel = await tguild.channels.create(`dev-ticket` + (liczba + 1), {
+                        type: 'text',
+                        permissionOverwrites: [
+                            {
+                                id: everyoneRole.id,
+                                deny: ['VIEW_CHANNEL'],
+                            },
+                            {
+                                id: ruser.id,
+                                allow: ['VIEW_CHANNEL'],
+                            }
+                        ]
+                    })
+    
+                    let guard = rows[0].guardid
+                    
+                    const embed = new Discord.MessageEmbed()
+                    .setTitle('Nowy bilet')
+                    .setDescription(`Opiekun tego języka niebawem się z tobą skontaktuje używając tego kanału w celu sprawdzenia twoich umiejętności. Prosimy o cierpliwość!\n\nNaciśnij na reakcję ❌ aby usunąć ten ticket\n**[Opiekun only]** Aby nadać rolę ${rows[0].name} dla <@${ruser.id}> naciśnij na reakcję 💼\n\n\n\nOpiekun: <@${guard}>\nTicket ID: ${liczba + 1}\nLang: ${rows[0].name}`)
+                    .setColor('#9370DB');
+                    
+                    const wiad = await ticketchannel.send(embed)
+                    wiad.react('❌')
+                    wiad.react('💼')
+                    let wiadomosc = await ticketchannel.send('<@'+guard+'> <@'+ruser.id+'>')
+                    wiadomosc.delete()
+    
+                    liczba = liczba + 1
+                    reaction.message.reactions.resolve('💼').users.remove(ruser.id)
+    
+                    con.query(`INSERT INTO dev_opened (channelid, messageid, emoji1, emoji2, type, name, userid) VALUES ('${wiad.channel.id}', '${wiad.id}', '❌', '💼', 'DEV', '${rows[0].name}', '${ruser.id}')`)
+                } else if (reaction.emoji.name === rows[0].emoji2) {
+                    if (rows[0].guardid === '613717481323757569') {
+                        const ticketchannel = await tguild.channels.create(`opk-ticket` + (liczba + 1), {
+                            type: 'text',
+                            permissionOverwrites: [
+                                {
+                                    id: everyoneRole.id,
+                                    deny: ['VIEW_CHANNEL'],
+                                },
+                                {
+                                    id: ruser.id,
+                                    allow: ['VIEW_CHANNEL'],
+                                }
+                            ]
+                        })
+        
+                        let guard = rows[0].guardid
+                        
+                        const embed = new Discord.MessageEmbed()
+                        .setTitle('Nowy bilet')
+                        .setDescription(`Ktoś z administracji niedługo się z tobą skontaktuje używając tego kanału w celu sprawdzenia twoich umiejętności. Prosimy o cierpliwość!\n\nNaciśnij na reakcję ❌ aby usunąć ten ticket\n**[Administration only]** Aby nadać rolę ${rows[0].name} dla <@${ruser.id}> naciśnij na reakcję 💼\n\n\n\nTicket ID: ${liczba + 1}\nLang: ${rows[0].name}`)
+                        .setColor('#9370DB');
+                        
+                        const wiad = await ticketchannel.send(embed)
+                        wiad.react('❌')
+                        wiad.react('💼')
+                        let wiadomosc = await ticketchannel.send('<@'+guard+'> <@'+ruser.id+'>')
+                        wiadomosc.delete()
+        
+                        liczba = liczba + 1
+                        reaction.message.reactions.resolve('📋').users.remove(ruser.id)
 
-        console.log(rows[0].messageid)
-
-        if (rows.length > 1) {
-            if (reaction.message.id === rows[0].messageid) {
-                console.log("elo")
+                        con.query(`INSERT INTO dev_opened (channelid, messageid, emoji1, emoji2, type, name, userid) VALUES ('${wiad.channel.id}', '${wiad.id}', '❌', '💼', 'OPK', '${rows[0].name}', '${ruser.id}')`)
+                    } else {
+                        ruser.send('Opiekun tego języka już istnieje! Jeśli uważasz, że mógłbyś być lepszy bądź jesteś w stanie udowodnić brak jego umiejętności użyj reakcji 🛡️')
+                        reaction.message.reactions.resolve('📋').users.remove(ruser.id)
+                    }
+                } else if (reaction.emoji.name === rows[0].emoji3) {
+                    const ticketchannel = await tguild.channels.create(`rep-ticket` + (liczba + 1), {
+                        type: 'text',
+                        permissionOverwrites: [
+                            {
+                                id: everyoneRole.id,
+                                deny: ['VIEW_CHANNEL'],
+                            },
+                            {
+                                id: ruser.id,
+                                allow: ['VIEW_CHANNEL'],
+                            }
+                        ]
+                    })
+    
+                    let guard = rows[0].guardid
+                    
+                    const embed = new Discord.MessageEmbed()
+                    .setTitle('Nowy bilet')
+                    .setDescription(`Ktoś z administracji niedługo się z tobą skontaktuje używając tego kanału w celu sprawdzenia dowodów. Prosimy o cierpliwość!\n\nNaciśnij na reakcję ❌ aby usunąć ten ticket\n\n\n\nTicket ID: ${liczba + 1}\nLang: ${rows[0].name}`)
+                    .setColor('#9370DB');
+                    
+                    const wiad = await ticketchannel.send(embed)
+                    wiad.react('❌')
+                    let wiadomosc = await ticketchannel.send('<@'+guard+'> <@'+ruser.id+'>')
+                    wiadomosc.delete()
+    
+                    liczba = liczba + 1
+                    reaction.message.reactions.resolve('🛡️').users.remove(ruser.id)
+                    con.query(`INSERT INTO dev_opened (channelid, messageid, emoji1, emoji2, type, name, userid) VALUES ('${wiad.channel.id}', '${wiad.id}', '❌', '💼', 'REP', '${rows[0].name}', '${ruser.id}')`)
+                }
             }
-        }
-    });
+        });
+    } else {
+        const query1 = con.query(`SELECT * FROM dev_opened WHERE messageid = '${reaction.message.id}'`, async (err, rows) => {
+            if(err) throw err;
+
+            if (reaction.emoji.name === rows[0].emoji1) {
+                let tuser = tguild.members.cache.find(mem => mem.id === rows[0].userid)
+                await tuser.send(`Twój ticket został usunięty`)
+
+                con.query(`DELETE FROM dev_opened WHERE messageid = '${reaction.message.id}'`)
+                reaction.message.channel.delete()
+            } else if (reaction.emoji.name === rows[0].emoji2) {
+                con.query(`SELECT * FROM dev_tickets WHERE name = '${rows[0].name}'`, async (err, rows1) => {
+                    if (err) throw err;
+                    
+                    if (rows[0].type === 'DEV') {
+                        if (ruser.id === rows1[0].guardid) {
+                            let tguild = client.guilds.cache.get('789874507665899560')
+                            let role = tguild.roles.cache.find(role => role.name === rows[0].name)
+                            let koks = tguild.members.cache.find(mem => mem.id === rows[0].userid)
+                            koks.roles.add(role)
+                            koks.send(`Twoje zgłoszenie na developera ${rows1[0].name} zostało rozpatrzone pozytywnie! Rola została nadana!`)
+                            con.query(`DELETE FROM dev_opened WHERE messageid = '${reaction.message.id}'`)
+                            reaction.message.channel.delete()
+                        } else {
+                            reaction.message.reactions.resolve('💼').users.remove(ruser.id)
+                        }
+                    } else if (rows[0].type === 'OPK') {
+                        if (ruser.id === rows1[0].guardid) {
+                            let tguild = client.guilds.cache.get('789874507665899560')
+                            let role = tguild.roles.cache.find(role => role.name === rows[0].name)
+                            let koks = tguild.members.cache.find(mem => mem.id === rows[0].userid)
+                            koks.roles.add(role)
+                            koks.send(`Twoje zgłoszenie na opiekuna ${rows1[0].name} zostało rozpatrzone pozytywnie! Rola została nadana!`)
+                            con.query(`DELETE FROM dev_opened WHERE messageid = '${reaction.message.id}'`)
+                            reaction.message.channel.delete()
+                        } else {
+                            reaction.message.reactions.resolve('💼').users.remove(ruser.id)
+                        }
+                    }
+                });
+            }
+        });
+    }
 });
 
-client.login('NzkwMTU1MTE4ODc1OTAxOTky.X98fTA.54UPDoCDIVM7CnmcpfFVlugCD7A');
+client.login('NzkwMTU1MTE4ODc1OTAxOTky.X98fTA.kDZ--BrlWXcfiM3aWfvToj17-9k');
