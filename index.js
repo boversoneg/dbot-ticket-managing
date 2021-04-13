@@ -272,4 +272,4 @@ client.on('messageReactionAdd', async (reaction, ruser) => {
     }
 });
 
-client.login('NzkwMTU1MTE4ODc1OTAxOTky.X98fTA.QMC-teX-GKBXnGwC9SopVjMBI8Q');
+client.login(process.env.DJS_TOKEN);
