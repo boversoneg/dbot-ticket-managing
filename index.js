@@ -8,10 +8,10 @@ let guard;
 let liczba = 0;
 
 const con = mysql.createConnection({
-    host: 'srv07.mikr.us',
-    user: 'bover',
-    password: 'boverchuj123',
-    database: 'bover',
+    host: '',
+    user: '',
+    password: '',
+    database: '',
     port: 40090,
 });
 
